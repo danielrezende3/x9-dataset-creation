@@ -1,3 +1,5 @@
 tqdm
 python_minifier
 python_obfuscator
+pandas
+scikit-learn
