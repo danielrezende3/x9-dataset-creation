@@ -1,0 +1,22 @@
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+.vscode/
+
+# remove dataset
+dataset/
+
+# remove jplag
+scripts/jplag-5.1.0.jar
