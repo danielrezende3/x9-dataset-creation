@@ -4,3 +4,5 @@ python_obfuscator
 pandas
 scikit-learn
 pyminifier3
+kaggle
+ipykernel
