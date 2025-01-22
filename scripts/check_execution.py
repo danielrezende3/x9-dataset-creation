@@ -1,13 +1,12 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-
+import argparse
 from tqdm import tqdm
-from utils import get_files_from_folder
+from utils import get_files_from_folder, log_error
 
-DATA_SET_ORIGINAL_FOLDER = Path("./dataset/original")
-DATA_SET_OBFUSCATED_FOLDER = Path("./dataset/minifier")
 TIMEOUT_SECONDS = 15
+FILE_NAME = Path(__file__).stem
 
 
 def run_and_save_stdout(file_path: Path) -> str:
@@ -34,18 +33,23 @@ def compare_stdout_of_two_files(file1: Path, file2: Path) -> bool:
         return False
 
 
-def main():
-    files = get_files_from_folder(DATA_SET_ORIGINAL_FOLDER)
+def main(data_set_orifinal_folder: Path, data_set_obfuscated_folder: Path) -> None:
+    original_files = sorted(get_files_from_folder(data_set_orifinal_folder))
+    obfuscated_files = sorted(get_files_from_folder(data_set_obfuscated_folder))
     correct_count = 0
+
+    if len(original_files) != len(obfuscated_files):
+        log_error(
+            FILE_NAME,
+            "The number of files in the original and obfuscated folders do not match.",
+        )
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = []
-        for file in files:
-            original_path = DATA_SET_ORIGINAL_FOLDER / file
-            obfuscated_path = DATA_SET_OBFUSCATED_FOLDER / file
+        for original_file, obfuscated_file in zip(original_files, obfuscated_files):
             futures.append(
                 executor.submit(
-                    compare_stdout_of_two_files, original_path, obfuscated_path
+                    compare_stdout_of_two_files, original_file, obfuscated_file
                 )
             )
 
@@ -53,8 +57,52 @@ def main():
             is_correct = future.result()
             correct_count += int(is_correct)
 
-    print(f"Correct count: {correct_count}/{len(files)}")
+    print(f"Correct count: {correct_count}/{len(original_files)}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Check if the obfuscation and original match the same output"
+    )
+    parser.add_argument(
+        "--original_folder",
+        type=str,
+        default="./dataset/original",
+        help="The path to the folder containing the original files",
+    )
+    parser.add_argument(
+        "--obfuscated_folder",
+        type=str,
+        help="The path to the folder containing the obfuscated files",
+    )
+
+    args = parser.parse_args()
+
+    original_arg = args.original_folder
+    obfuscated_arg = args.obfuscated_folder
+
+    # Check that they are non-empty strings
+    if not original_arg or not isinstance(original_arg, str):
+        log_error(FILE_NAME, "--original_folder must be a valid non-empty string.")
+
+    if not obfuscated_arg or not isinstance(obfuscated_arg, str):
+        log_error(FILE_NAME, "--obfuscated_folder must be a valid non-empty string.")
+
+    # Create the Path objects
+    original_folder = Path(original_arg)
+    obfuscated_folder = Path(obfuscated_arg)
+
+    # Now check if they exist and are directories
+    if not original_folder.is_dir():
+        log_error(
+            FILE_NAME,
+            f"The path '{original_folder}' does not exist or is not a directory.",
+        )
+
+    if not obfuscated_folder.is_dir():
+        log_error(
+            FILE_NAME,
+            f"The path '{obfuscated_folder}' does not exist or is not a directory",
+        )
+
+    main(original_folder, obfuscated_folder)
