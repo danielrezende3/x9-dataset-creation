@@ -1,53 +1,40 @@
 # Hub of experiments
 
-- [Hub of experiments](#hub-of-experiments)
-  - [What each file does](#what-each-file-does)
-  - [How to setup the experiments](#how-to-setup-the-experiments)
-    - [Downloading the dataset](#downloading-the-dataset)
-      - [Downloading TheAlgorithms/rosetta\_code](#downloading-thealgorithmsrosetta_code)
-      - [Downloading codeforces dataset](#downloading-codeforces-dataset)
-    - [How to download dolos, version 2.9](#how-to-download-dolos-version-29)
-    - [How to download jplag, version 5.1](#how-to-download-jplag-version-51)
-    - [Preparing venv](#preparing-venv)
-  - [How to run the dataset](#how-to-run-the-dataset)
-    - [For dolos](#for-dolos)
-    - [For jplag](#for-jplag)
-  - [Experiments](#experiments)
-    - [Experiment 1: Verify if modified files yield identical I/O](#experiment-1-verify-if-modified-files-yield-identical-io)
-    - [Experiment 2: Verify precision recall and f1-score of dolos and jplag](#experiment-2-verify-precision-recall-and-f1-score-of-dolos-and-jplag)
+This repo contains the experiments done for the [code4bench](https://github.com/code4bench/Code4Bench) database
 
-## What each file does
+## What each file does?
 
 - `dataset/`: contains the dataset used in the experiments
+  - `dataset/codeforces`: contains the codeforces dataset
+  - `dataset/codeforces_input`: contains the input of the codeforces dataset
+  - `dataset/codeforces_output`: contains the output of the codeforces dataset
+  - `dataset/codeforces_pyminifier`: contains the codeforces dataset obfuscated with pyminifier
+  - `dataset/codeforces_python_minifier`: contains the codeforces dataset obfuscated with python-minifier
+  - `dataset/codeforces_python_obfuscator`: contains the codeforces dataset obfuscated with python-obfuscator
 - `scripts/`: contains the scripts used to run the experiments
   - `check_execution.py`: checks if the output of the experiments is correct
   - `compute_score.py`: computes the precision, recall and f1-score of the experiments
   - `obfuscate_files.py`: obfuscates the files in the dataset
+  - `process_codeforces_database.py`: process the database and creates the dataset
   - `utils.py`: contains the utility functions used in the experiments
 
 ## How to setup the experiments
 
-### Downloading the dataset
-
-#### Downloading TheAlgorithms/rosetta_code
+### Downloading and processing the dataset
 
 TODO!
 
-#### Downloading codeforces dataset
+### How to download dolos, at least version 2.9
 
-TODO!
-
-### How to download dolos, version 2.9
-
-Note: need to have npm installed on your environment
+Need to have npm installed on your environment
 
 ```bash
 npm install -g @dodona/dolos
 ```
 
-### How to download jplag, version 5.1
+### How to download jplag, at least version 5.1
 
-Note: You also need to have java installed on your environment
+Need to have java installed on your environment
 
 ```bash
 wget -P ./scripts https://github.com/jplag/JPlag/releases/download/v5.1.0/jplag-5.1.0-jar-with-dependencies.jar
@@ -61,34 +48,60 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## How to run the dataset
+## How to test the dataset
 
 ### For dolos
 
 ```bash
-dolos --output-format csv --language python dataset/python_minifier/*.py
+dolos --output-format csv --language python file_path/*.py
 ```
 
 ### For jplag
 
 ```bash
-java -jar scripts/jplag-5.1.0.jar -l python3 dataset/python_minifier --csv-export 
+java -jar scripts/jplag-5.1.0.jar -l python3 file_path/ --csv-export 
 ```
 
-## Experiments
+## Usage Instructions
 
-### Experiment 1: Verify if modified files yield identical I/O
+### Run the Entire Workflow
 
-|Dataset|obfuscation type|Notes|
-|-------|----------------|-----|
-|TheAlgorithms/rosetta_code|python-minifier default settings|Identical|
-|TheAlgorithms/rosetta_code|pyminifier -O|Different|
+```bash
+make
+```
 
-### Experiment 2: Verify precision recall and f1-score of dolos and jplag
+or, alternatively
 
-Default settings dolos and jplag, the result is in (precision, recall, f1-score) format
+```bash
+make all
+```
 
-|Dataset| Experiment                       | dolos              | jplag              |
-|--------------------------------| -------------------------------- | ------------------ | ------------------ |
-|TheAlgorithms/rosetta_code| python-minifier default settings | (1.00, 0.10, 0.18) | (1.00, 0.82, 0.90) |
-|TheAlgorithms/rosetta_code| pyminifier -O | x | x |
+### Set Up Only
+
+```bash
+make setup
+```
+
+### Run Obfuscation Steps Only
+
+```bash
+make obfuscate
+```
+
+### Run Execution Checks Only
+
+```bash
+make check
+```
+
+### Run Score Computation Only
+
+```bash
+make score
+```
+
+### Clean Up Generated Directories
+
+```bash
+make clean
+```

@@ -14,7 +14,7 @@ env.bak/
 venv.bak/
 .conda/
 .vscode/
-
+./ruff_cache/
 # remove dataset
 dataset/
 notebooks/

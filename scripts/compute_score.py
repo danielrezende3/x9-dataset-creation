@@ -1,6 +1,5 @@
 import argparse
 import subprocess
-import sys
 from glob import glob
 from pathlib import Path
 
@@ -61,7 +60,9 @@ def read_csv_calc_print_score(csv_path: Path, model: str) -> None:
 
 def main(config: argparse.Namespace) -> None:
     # Run dolos
-    files = glob(f"./{config.folder_path}/*.py")
+    folder_path = Path(config.folder_path)
+
+    files = glob(f"./{folder_path}/*.py")
     stdout = (
         subprocess.run(
             [
@@ -90,9 +91,11 @@ def main(config: argparse.Namespace) -> None:
                 "scripts/jplag-5.1.0.jar",
                 "-l",
                 "python3",
-                config.folder_path,
+                folder_path,
                 "--csv-export",
+                "--cluster-skip"
             ],
+            timeout=10,
             capture_output=True,
             text=True,
         )
@@ -109,7 +112,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "folder_path",
-        type=Path,
+        type=str,
         help="The path to the solutions folder, needs to be all files, original and obfuscated",
     )
     args = parser.parse_args()
