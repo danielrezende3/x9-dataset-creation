@@ -17,6 +17,6 @@ venv.bak/
 
 # remove dataset
 dataset/
-
+notebooks/
 # remove jplag
 scripts/jplag-5.1.0.jar

@@ -1,21 +1,27 @@
 import argparse
+import subprocess
 import sys
+from glob import glob
+from pathlib import Path
+
 import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score
 
+from scripts.utils import log_error
 
-def calculate_and_print_score(data: pd.DataFrame) -> None:
-    precision = precision_score(data["ground_truth"], data["prediction"])
-    recall = recall_score(data["ground_truth"], data["prediction"])
-    f1 = f1_score(data["ground_truth"], data["prediction"])
-
-    print(f"Precision: {precision:.2f}")
-    print(f"Recall: {recall:.2f}")
-    print(f"f1-score: {f1:.2f}")
-    print(f"({precision:.2f}, {recall:.2f}, {f1:.2f})")
+FILE_NAME = Path(__file__).stem
 
 
-def get_variables_for_model(model_type: str) -> tuple[str, str, str]:
+def calculate_and_print_score(data: pd.DataFrame) -> tuple[float, float, float]:
+    precision = precision_score(
+        data["ground_truth"], data["prediction"], zero_division=0
+    )
+    recall = recall_score(data["ground_truth"], data["prediction"], zero_division=0)
+    f1 = f1_score(data["ground_truth"], data["prediction"], zero_division=0)
+    return float(precision), float(recall), float(f1)
+
+
+def retrieve_model_variables(model_type: str) -> tuple[str, str, str]:
     if model_type == "jplag":
         return "submissionName1", "submissionName2", "averageSimilarity"
     elif model_type == "dolos":
@@ -24,8 +30,8 @@ def get_variables_for_model(model_type: str) -> tuple[str, str, str]:
         raise ValueError(f"Unknown model type: {model_type}")
 
 
-def process_data(data: pd.DataFrame, model_type: str) -> pd.DataFrame:
-    submission1, submission2, similarity = get_variables_for_model(model_type)
+def evaluate_similarity(data: pd.DataFrame, model_type: str) -> pd.DataFrame:
+    submission1, submission2, similarity = retrieve_model_variables(model_type)
     try:
         data["problem1"] = data[submission1].str.extract(r"problem_(\d+)", expand=False)
         data["problem2"] = data[submission2].str.extract(r"problem_(\d+)", expand=False)
@@ -40,32 +46,77 @@ def process_data(data: pd.DataFrame, model_type: str) -> pd.DataFrame:
         )
 
 
-def main(csv_path: str, model_type) -> None:
+def read_csv_calc_print_score(csv_path: Path, model: str) -> None:
+    print(f"--- {model} ---")
     data = pd.read_csv(csv_path)
+    data = evaluate_similarity(data, model)
+    precision, recall, f1 = calculate_and_print_score(data)
 
-    data = process_data(data, model_type)
+    print(f"Precision: {precision:.2f}")
+    print(f"Recall: {recall:.2f}")
+    print(f"f1-score: {f1:.2f}")
+    print(f"({precision:.2f}, {recall:.2f}, {f1:.2f})")
 
-    calculate_and_print_score(data)
+
+def main(folder_path: Path) -> None:
+    # Run dolos
+    files = glob(f"./{folder_path}/*.py")
+    stdout = (
+        subprocess.run(
+            [
+                "dolos",
+                "--output-format",
+                "csv",
+                "--language",
+                "python",
+                *files,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        .stdout.split("\n")[0]
+        .split(":")[1]
+        .strip()
+    )
+    read_csv_calc_print_score(Path(f"./{stdout}/pairs.csv"), "dolos")
+
+    # Run jplag
+    stdout = (
+        subprocess.run(
+            [
+                "java",
+                "-jar",
+                "scripts/jplag-5.1.0.jar",
+                "-l",
+                "python3",
+                folder_path,
+                "--csv-export",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        .stdout.split("\n")[0]
+        .split(":")[1]
+        .strip()
+    )
+    read_csv_calc_print_score(Path("./results/results.csv"), "jplag")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compute the score of the model")
+    parser = argparse.ArgumentParser(
+        description="Run and compute the score of the dataset"
+    )
     parser.add_argument(
-        "csv_path",
+        "folder_path",
         type=str,
         help="The path to the CSV file containing the ground truth and predictions",
     )
-    parser.add_argument(
-        "model_type",
-        type=str,
-        help="Type of the model, either 'dolos' or 'jplag'",
-    )
     args = parser.parse_args()
 
-    if args.model_type not in ["dolos", "jplag"]:
-        print("compute_score.py: error: model_type must be either 'dolos' or 'jplag'")
-
-    csv_path = args.csv_path
-    model_type = args.model_type
-
-    main(csv_path, model_type)
+    folder_path = Path(args.folder_path)
+    if not folder_path.is_dir():
+        log_error(
+            FILE_NAME,
+            f"The path '{folder_path}' does not exist or is not a directory.",
+        )
+    main(folder_path)

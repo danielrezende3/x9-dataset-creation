@@ -6,3 +6,8 @@ scikit-learn
 pyminifier3
 kaggle
 ipykernel
+kagglehub
+ipywidgets
+beautifulsoup4
+sqlalchemy 
+pymysql
