@@ -33,3 +33,28 @@ def natural_key(file_path: Path) -> list[str | int]:
         int(text) if text.isdigit() else text
         for text in re.split(r"(\d+)", file_path.name)
     ]
+
+
+def get_first_folder(path: Path) -> str:
+    """
+    Retrieve the first folder from a given filesystem path.
+
+    This function takes a `Path` object and returns the name of the first folder
+    in the path. It correctly handles both absolute and relative paths across
+    different operating systems.
+    """
+    if not isinstance(path, Path):
+        raise TypeError("The 'path' argument must be a pathlib.Path instance.")
+
+    parts = path.parts
+
+    if not parts:
+        return ""
+
+    if path.is_absolute():
+        if len(parts) >= 2:
+            return parts[1]
+        else:
+            return ""
+    else:
+        return parts[-2]

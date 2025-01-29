@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
 from tqdm import tqdm
-from utils import get_files_from_folder, log_error, validate_directories
+from utils import (
+    get_files_from_folder,
+    get_first_folder,
+    log_error,
+    validate_directories,
+)
 
 # Constants -------------------------------------------------------------------
 TIMEOUT_SECONDS = 15
@@ -19,7 +24,9 @@ NUM_WORKERS = 4
 LOG_DIR = "logs"
 # Logging setup Constants -----------------------------------------------------
 os.makedirs(LOG_DIR, exist_ok=True)
-log_filename = os.path.join(LOG_DIR, datetime.now().strftime("app_%Y-%m-%d_%H_%M.log"))
+log_filename = os.path.join(
+    LOG_DIR, datetime.now().strftime(f"{FILE_NAME}_%Y-%m-%d_%H_%M_%S.log")
+)
 
 
 logging.basicConfig(
@@ -46,6 +53,10 @@ def run_script(file_path: Path, input_data: str = "100") -> str:
             text=True,
             timeout=TIMEOUT_SECONDS,
         )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Script {file_path} exited with return code {result.returncode}: {result.stderr}"
+            )
         return result.stdout
     except subprocess.TimeoutExpired as e:
         raise RuntimeError(f"Timeout expired for {file_path}") from e
@@ -53,50 +64,11 @@ def run_script(file_path: Path, input_data: str = "100") -> str:
         raise RuntimeError(f"Error executing {file_path}") from e
 
 
-def log_comparison_details(
-    file1: Path,
-    file2: Path,
-    stdout1: str,
-    stdout2: str,
-    expected_output: Optional[str] = None,
-) -> None:
-    """
-    Logs detailed comparison results for two script outputs.
-
-    :param file1: Path to the first script.
-    :param file2: Path to the second script.
-    :param stdout1: Output from the first script.
-    :param stdout2: Output from the second script.
-    :param expected_output: Optional expected output to validate against.
-    """
-    if expected_output is not None:
-        # Check and log discrepancies for the first script
-        if stdout1 != expected_output:
-            logger.error(
-                f"EXPECTED_MISMATCH: [{file1.parent}/{file1.stem}] Output mismatch: "
-                f"Expected '{expected_output}', Got '{stdout1}'"
-            )
-        # Check and log discrepancies for the second script
-        if stdout2 != expected_output:
-            logger.error(
-                f"EXPECTED_MISMATCH: [{file2.parent}/{file2.stem}] Output mismatch: "
-                f"Expected '{expected_output}', Got '{stdout2}'"
-            )
-    else:
-        # If no expected output, compare the two outputs directly
-        if stdout1 != stdout2:
-            logger.error(
-                f"STDOUT_MISMATCH: Output mismatch between [{file1.parent}/{file1.stem}] and "
-                f"[{file2.parent}/{file2.stem}]: "
-                f"'{stdout1}' != '{stdout2}'"
-            )
-
-
 def compare_files(
     file1: Path,
     file2: Path,
-    input_data: Optional[str] = None,
-    expected_output: Optional[str] = None,
+    input_data: Optional[tuple[str, str]] = None,
+    expected_output: Optional[tuple[str, str]] = None,
 ) -> bool:
     """
     Compare outputs of two scripts with optional input and expected output validation.
@@ -107,44 +79,45 @@ def compare_files(
     :param expected_output: Optional expected output to validate against.
     :returns: True if both scripts produce matching (and expected) output, else False.
     """
+    input = input_data[0] if input_data else "100"
+    name_problem_input = input_data[1] if input_data else ""
     try:
-        # Run both scripts with the provided input_data or default to "100"
-        stdout1 = run_script(file1, input_data or "100").strip()
-        stdout2 = run_script(file2, input_data or "100").strip()
-        logger.info(
-            f"STARTING: comparing for [{file1.parent}/{file1.stem}] and [{file2.parent}/{file2.stem}]."
-        )
-        # Determine if outputs match (and match expected_output if provided)
-        if expected_output is not None:
-            result = (stdout1 == stdout2) and (stdout1 == expected_output)
-        else:
-            result = stdout1 == stdout2
+        stdout1 = run_script(file1, input).strip()
+        stdout2 = run_script(file2, input).strip()
+
+        result = stdout1 == stdout2
 
         if result:
             logger.info(
-                f"SUCCESS: Outputs match for [{file1.parent}/{file1.stem}] and "
-                f"[{file2.parent}/{file2.stem}]."
+                f"SUCCESS: [{get_first_folder(file1)}/{file1.stem}] == [{get_first_folder(file2)}/{file2.stem}]."
             )
         else:
-            # Log detailed comparison results
-            log_comparison_details(file1, file2, stdout1, stdout2, expected_output)
             logger.error(
-                f"FAILURE: Outputs do not match for [{file1.parent}/{file1.stem}] and "
-                f"[{file2.parent}/{file2.stem}]."
+                f"STDOUT_MISMATCH: [{get_first_folder(file1)}/{file1.stem}] and "
+                f"[{get_first_folder(file2)}/{file2.stem}]: "
+                f"for [{name_problem_input}]: {repr(stdout1)} != {repr(stdout2)}"
             )
 
         return result
 
     except RuntimeError as e:
         logger.error(
-            f"RuntimeError while comparing [{file1.parent}/{file1.stem}] and "
-            f"[{file2.parent}/{file2.stem}]: {e}"
+            f"RUN_TIME_ERROR: [{get_first_folder(file1)}/{file1.stem}] and "
+            f"[{get_first_folder(file2)}/{file2.stem}]: for [{name_problem_input}]: {e}"
+        )
+        return False
+    except Exception as e:
+        logger.error(
+            f"UNHANDLED_EXC: [{get_first_folder(file1)}/{file1.stem}] and "
+            f"[{get_first_folder(file2)}/{file2.stem}]: for [{name_problem_input}]: {e}"
         )
         return False
 
 
 def process_tasks(
-    tasks: Iterable[Tuple[Path, Path, Optional[str], Optional[str]]],
+    tasks: Iterable[
+        Tuple[Path, Path, Optional[tuple[str, str]], Optional[tuple[str, str]]]
+    ],
 ) -> int:
     """Process comparison tasks concurrently with progress tracking.
 
@@ -181,9 +154,9 @@ def setup_tasks_simple(
 def setup_tasks_with_io(
     original_files: List[Path],
     obfuscated_files: List[Path],
-    input_contents: List[str],
-    output_contents: List[str],
-) -> List[Tuple[Path, Path, str, str]]:
+    input_contents: List[tuple[str, str]],
+    output_contents: List[tuple[str, str]],
+) -> List[Tuple[Path, Path, tuple[str, str], tuple[str, str]]]:
     """Create comparison tasks with input/output validation.
 
     :param original_files: List of original Python script paths
@@ -273,12 +246,16 @@ def filter_matching_files(
 
 
 def main(config: argparse.Namespace) -> None:
-    """Main comparison workflow controller.
-
-    :param config: Parsed command-line arguments
-    """
+    """Main comparison workflow controller."""
     original_files = get_files_from_folder(config.original_folder)
     obfuscated_files = get_files_from_folder(config.obfuscated_folder)
+
+    # Validate that both folders contain files
+    if not original_files:
+        log_error(FILE_NAME, f"No files found in {config.original_folder}")
+
+    if not obfuscated_files:
+        log_error(FILE_NAME, f"No files found in {config.obfuscated_folder}")
 
     # Filter files to keep only those with matching stems
     filtered_original_files, filtered_obfuscated_files = filter_matching_files(
@@ -288,8 +265,13 @@ def main(config: argparse.Namespace) -> None:
     if config.input_folder:
         input_files = get_files_from_folder(config.input_folder)
         output_files = get_files_from_folder(config.output_folder)
+        if not input_files:
+            log_error(FILE_NAME, f"No files found in {config.input_folder}")
 
-        # Filter files to keep only those with matching stems
+        if not output_files:
+            log_error(FILE_NAME, f"No files found in {config.output_folder}")
+
+        # Additional filtering and validation
         filtered_input_files, filtered_original_files = filter_matching_files(
             input_files, filtered_original_files
         )
@@ -300,8 +282,15 @@ def main(config: argparse.Namespace) -> None:
             filtered_original_files, filtered_obfuscated_files
         )
 
-        input_contents = [f.read_text() for f in filtered_input_files]
-        output_contents = [f.read_text() for f in filtered_output_files]
+        # Ensure consistent lengths
+        if len(filtered_original_files) != len(filtered_obfuscated_files):
+            log_error(
+                FILE_NAME,
+                "Mismatch in the number of original and obfuscated files after filtering.",
+            )
+
+        input_contents = [(f.read_text(), f.name) for f in filtered_input_files]
+        output_contents = [(f.read_text(), f.name) for f in filtered_output_files]
 
         tasks = setup_tasks_with_io(
             filtered_original_files,
@@ -311,6 +300,9 @@ def main(config: argparse.Namespace) -> None:
         )
     else:
         tasks = setup_tasks_simple(filtered_original_files, filtered_obfuscated_files)
+
+    if not tasks:
+        log_error(FILE_NAME, "No valid tasks to process after filtering.")
 
     correct_count = process_tasks(tasks)
     total = len(tasks) if config.input_folder else len(original_files)

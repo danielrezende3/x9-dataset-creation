@@ -79,37 +79,37 @@ class Obfuscator:
         except OSError:
             log_error(FILE_NAME, f"Error reading file {file}")
 
-            obfuscated_code, output_suffix = self.__get_obfuscated_code_and_suffix(
-                original_code, file
+        obfuscated_code, output_suffix = self.__get_obfuscated_code_and_suffix(
+            original_code, file
+        )
+
+        # Build output file name
+        if self.include_suffix:
+            new_file_name = f"{file.stem}{output_suffix}{file.suffix}"
+        else:
+            new_file_name = f"{file.stem}{file.suffix}"
+
+        obfuscated_file_path = self.obfuscated_folder / new_file_name
+        try:
+            with open(obfuscated_file_path, "w") as f:
+                f.write(obfuscated_code)
+        except OSError:
+            log_error(
+                FILE_NAME,
+                f"Error writing obfuscated file {obfuscated_file_path}",
             )
 
-            # Build output file name
-            if self.include_suffix:
-                new_file_name = f"{file.stem}{output_suffix}{file.suffix}"
-            else:
-                new_file_name = f"{file.stem}{file.suffix}"
-
-            obfuscated_file_path = self.obfuscated_folder / new_file_name
+        # Optionally save the original file
+        if self.include_original:
+            original_file_path = self.obfuscated_folder / file.name
             try:
-                with open(obfuscated_file_path, "w") as f:
-                    f.write(obfuscated_code)
+                with open(original_file_path, "w") as f:
+                    f.write(original_code)
             except OSError:
                 log_error(
                     FILE_NAME,
-                    f"Error writing obfuscated file {obfuscated_file_path}",
+                    f"Error writing original file {original_file_path}",
                 )
-
-            # Optionally save the original file
-            if self.include_original:
-                original_file_path = self.obfuscated_folder / file.name
-                try:
-                    with open(original_file_path, "w") as f:
-                        f.write(original_code)
-                except OSError:
-                    log_error(
-                        FILE_NAME,
-                        f"Error writing original file {original_file_path}",
-                    )
 
     def __python_obfuscator_output(self, code: str) -> str:
         """(UNSTABLE) Use python_obfuscator library to obfuscate the code."""
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         type=str,
         required=True,
         choices=["python_minifier", "python_obfuscator", "pyminifier"],
-        help="Obfuscator to use. Available options: 'python_minifier', '(UNSTABLE) python_obfuscator', 'pyminifier'",
+        help="Obfuscator to use. Available options: 'python_minifier', 'python_obfuscator', 'pyminifier'",
     )
     parser.add_argument(
         "--include_original",
