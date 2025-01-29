@@ -20,6 +20,13 @@ def get_files_from_folder(folder: Path) -> list[Path]:
     )
 
 
+def validate_directories(file_name: str, *paths: Path) -> None:
+    """Validate that all provided paths exist and are directories."""
+    for path in paths:
+        if not path.is_dir():
+            log_error(file_name, f"Path '{path}' does not exist or is not a directory")
+
+
 def natural_key(file_path: Path) -> list[str | int]:
     """Extract numeric parts of the file name for sorting"""
     return [

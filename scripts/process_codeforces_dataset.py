@@ -105,11 +105,11 @@ for solution in list_solution:
 for id, testcase in enumerate(testcase_rows_formated):
     id = id % 3 + 1
     with open(
-        f"./dataset/codeforces_input/problem_{testcase['problems_id']}_{id}.in", "w"
+        f"./dataset/codeforces_input/problem_{testcase['problems_id']}.in_{id}", "w"
     ) as f:
         f.write(clean_str(testcase["inputdata"]))
 
     with open(
-        f"./dataset/codeforces_output/problem_{testcase['problems_id']}_{id}.out", "w"
+        f"./dataset/codeforces_output/problem_{testcase['problems_id']}.out_{id}", "w"
     ) as f:
         f.write(clean_str(testcase["expectedresult"]))

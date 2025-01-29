@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score
 
-from scripts.utils import log_error
+from scripts.utils import log_error, validate_directories
 
 FILE_NAME = Path(__file__).stem
 
@@ -27,7 +27,7 @@ def retrieve_model_variables(model_type: str) -> tuple[str, str, str]:
     elif model_type == "dolos":
         return "leftFilePath", "rightFilePath", "similarity"
     else:
-        raise ValueError(f"Unknown model type: {model_type}")
+        log_error(FILE_NAME, f"Unknown model type: {model_type}")
 
 
 def evaluate_similarity(data: pd.DataFrame, model_type: str) -> pd.DataFrame:
@@ -41,8 +41,9 @@ def evaluate_similarity(data: pd.DataFrame, model_type: str) -> pd.DataFrame:
         data["prediction"] = data[similarity] > threshold
         return data
     except KeyError:
-        sys.exit(
-            f"compute_score.py: error: Could not find columns for model type {model_type} in the CSV file"
+        log_error(
+            FILE_NAME,
+            f"Could not find columns for model type {model_type} in the CSV file",
         )
 
 
@@ -58,9 +59,9 @@ def read_csv_calc_print_score(csv_path: Path, model: str) -> None:
     print(f"({precision:.2f}, {recall:.2f}, {f1:.2f})")
 
 
-def main(folder_path: Path) -> None:
+def main(config: argparse.Namespace) -> None:
     # Run dolos
-    files = glob(f"./{folder_path}/*.py")
+    files = glob(f"./{config.folder_path}/*.py")
     stdout = (
         subprocess.run(
             [
@@ -89,7 +90,7 @@ def main(folder_path: Path) -> None:
                 "scripts/jplag-5.1.0.jar",
                 "-l",
                 "python3",
-                folder_path,
+                config.folder_path,
                 "--csv-export",
             ],
             capture_output=True,
@@ -108,15 +109,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "folder_path",
-        type=str,
-        help="The path to the CSV file containing the ground truth and predictions",
+        type=Path,
+        help="The path to the solutions folder, needs to be all files, original and obfuscated",
     )
     args = parser.parse_args()
 
-    folder_path = Path(args.folder_path)
-    if not folder_path.is_dir():
-        log_error(
-            FILE_NAME,
-            f"The path '{folder_path}' does not exist or is not a directory.",
-        )
-    main(folder_path)
+    validate_directories(FILE_NAME, Path(args.folder_path))
+    main(args)

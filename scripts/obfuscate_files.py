@@ -6,7 +6,7 @@ import python_minifier
 import python_obfuscator
 from python_obfuscator.techniques import add_random_variables, one_liner
 from tqdm import tqdm
-from utils import get_files_from_folder, log_error
+from utils import get_files_from_folder, log_error, validate_directories
 
 FILE_NAME = Path(__file__).stem
 
@@ -130,13 +130,7 @@ class Obfuscator:
         return result.stdout
 
 
-def main(
-    original_folder: Path,
-    obfuscated_folder: Path,
-    method: str,
-    include_original: bool,
-    include_suffix: bool,
-) -> None:
+def main(config: argparse.Namespace) -> None:
     """
     Main function to create an Obfuscator instance and run the obfuscation process.
 
@@ -147,7 +141,11 @@ def main(
     :param include_suffix: Whether to add a suffix to the obfuscated file names.
     """
     obfuscator = Obfuscator(
-        original_folder, obfuscated_folder, method, include_original, include_suffix
+        config.original_folder,
+        config.obfuscated_folder,
+        config.method,
+        config.include_original,
+        config.include_suffix,
     )
     obfuscator.obfuscate_files()
 
@@ -158,13 +156,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--original_folder",
-        type=str,
+        type=Path,
         required=True,
         help="The path to the folder containing the original files",
     )
     parser.add_argument(
         "--obfuscated_folder",
-        type=str,
+        type=Path,
         required=True,
         help="The path to the folder where the obfuscated files will be saved",
     )
@@ -190,34 +188,9 @@ if __name__ == "__main__":
 
     original_arg = args.original_folder
     obfuscated_arg = args.obfuscated_folder
+    required_dirs = [original_arg, obfuscated_arg]
 
-    # Validate original folder
-    if not original_arg or not isinstance(original_arg, str):
-        log_error(FILE_NAME, "--original_folder must be a valid non-empty string.")
+    # Validate directories
+    validate_directories(FILE_NAME, *required_dirs)
 
-    # Validate obfuscated folder
-    if not obfuscated_arg or not isinstance(obfuscated_arg, str):
-        log_error(FILE_NAME, "--obfuscated_folder must be a valid non-empty string.")
-
-    # Create Path objects
-    original_folder = Path(original_arg)
-    obfuscated_folder = Path(obfuscated_arg)
-
-    # Check if directories exist
-    if not original_folder.is_dir():
-        log_error(
-            FILE_NAME,
-            f"The path '{original_folder}' does not exist or is not a directory.",
-        )
-
-    if not obfuscated_folder.is_dir():
-        log_error(
-            FILE_NAME,
-            f"The path '{obfuscated_folder}' does not exist or is not a directory.",
-        )
-
-    method = args.method
-    include_original = args.include_original
-    include_suffix = args.include_suffix
-
-    main(original_folder, obfuscated_folder, method, include_original, include_suffix)
+    main(args)
