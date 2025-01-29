@@ -76,31 +76,41 @@ or, alternatively
 make all
 ```
 
-### Set Up Only
-
-```bash
-make setup
-```
-
-### Run Obfuscation Steps Only
-
-```bash
-make obfuscate
-```
-
-### Run Execution Checks Only
-
-```bash
-make check
-```
-
-### Run Score Computation Only
+### Alternatively, run only the score computation
 
 ```bash
 make score
 ```
 
-### Clean Up Generated Directories
+### Indepedent commands
+
+#### Set Up Only
+
+```bash
+make setup
+```
+
+
+
+#### Run Obfuscation Steps Only
+
+```bash
+make obfuscate
+```
+
+#### Run Execution Checks Only
+
+```bash
+make check
+```
+
+#### Run Score Computation Only
+
+```bash
+make score
+```
+
+#### Clean Up Generated Directories
 
 ```bash
 make clean
