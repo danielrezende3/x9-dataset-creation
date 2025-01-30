@@ -34,7 +34,7 @@ log_filename = os.path.join(
 logging.basicConfig(
     filename=log_filename,
     level=logging.ERROR,
-    format="%(asctime)s - %(levelname)s: %(message)s",
+    format=f"{FILE_NAME} %(levelname)s: %(message)s",
 )
 logger = logging.getLogger()
 

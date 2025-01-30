@@ -54,6 +54,7 @@ PYTHON38_PATH=python38_path
 python -m venv .venv 
 source .venv/bin/activate
 pip install -r requirements.txt
+export PYTHONPATH=$PWD
 ```
 
 ### How to download dolos, at least version 2.9
