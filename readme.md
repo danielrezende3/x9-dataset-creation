@@ -30,6 +30,22 @@ Note: The results scores are in the format (dolos, jplag)
 
 ## How to setup the experiments
 
+Before hand, you need to have the following installed on your environment:
+
+- java runtime
+- unrar
+- wget
+- mysql
+- npm
+
+After that you need to setup the environmet variables in `.env` file
+
+```bash
+MYSQL_USER=your_user
+MYSQL_PASSWORD=your_password
+MYSQL_HOST=your_host
+```
+
 ### Preparing venv
 
 ```bash
@@ -51,7 +67,7 @@ npm install -g @dodona/dolos
 Need to have java installed on your environment
 
 ```bash
-wget -P ./scripts -O jplag-5.1.0 https://github.com/jplag/JPlag/releases/download/v5.1.0/jplag-5.1.0-jar-with-dependencies.jar
+wget -O scripts/jplag-5.1.0.jar https://github.com/jplag/JPlag/releases/download/v5.1.0/jplag-5.1.0-jar-with-dependencies.jar
 ```
 
 ### Downloading and processing the dataset
