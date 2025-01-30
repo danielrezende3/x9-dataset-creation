@@ -2,6 +2,16 @@
 
 This repo contains the experiments done for the [code4bench](https://github.com/code4bench/Code4Bench) database
 
+## Preliminary results
+
+Note: The results scores are in the format (dolos, jplag)
+
+|obfuscator|precision |recall|f1-score|correct output|
+|---|---|---|---|---|
+|codeforces_pyminifier| 1.00, 1.00| 0.53, 0.81| 0.69, 0.89|35/300|
+|codeforces_python_minifier| 1.00, 1.00| 0.85, 0.88| 0.92, 0.94|295/300|
+|codeforces_python_obfuscator| 1.00, 1.00| 0.98, 0.99| 0.99, 0.99| 213/300|
+
 ## What each file does?
 
 - `dataset/`: contains the dataset used in the experiments
@@ -20,9 +30,13 @@ This repo contains the experiments done for the [code4bench](https://github.com/
 
 ## How to setup the experiments
 
-### Downloading and processing the dataset
+### Preparing venv
 
-TODO!
+```bash
+python -m venv .venv 
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 ### How to download dolos, at least version 2.9
 
@@ -37,29 +51,20 @@ npm install -g @dodona/dolos
 Need to have java installed on your environment
 
 ```bash
-wget -P ./scripts https://github.com/jplag/JPlag/releases/download/v5.1.0/jplag-5.1.0-jar-with-dependencies.jar
+wget -P ./scripts -O jplag-5.1.0 https://github.com/jplag/JPlag/releases/download/v5.1.0/jplag-5.1.0-jar-with-dependencies.jar
 ```
 
-### Preparing venv
+### Downloading and processing the dataset
+
+First you need to setup the environment before doing the script
+
+BEFORE: Check if `unrar`, `wget` and `mysql` are installed on your environment
+
+WARNING: The script will take some time to download and process the database (~1 hour)
 
 ```bash
-python -m venv .venv 
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-## How to test the dataset
-
-### For dolos
-
-```bash
-dolos --output-format csv --language python file_path/*.py
-```
-
-### For jplag
-
-```bash
-java -jar scripts/jplag-5.1.0.jar -l python3 file_path/ --csv-export 
+chmod +x import_sql.sh
+./import_sql.sh
 ```
 
 ## Usage Instructions
@@ -70,48 +75,8 @@ java -jar scripts/jplag-5.1.0.jar -l python3 file_path/ --csv-export
 make
 ```
 
-or, alternatively
-
-```bash
-make all
-```
-
 ### Alternatively, run only the score computation
 
 ```bash
 make score
-```
-
-### Indepedent commands
-
-#### Set Up Only
-
-```bash
-make setup
-```
-
-
-
-#### Run Obfuscation Steps Only
-
-```bash
-make obfuscate
-```
-
-#### Run Execution Checks Only
-
-```bash
-make check
-```
-
-#### Run Score Computation Only
-
-```bash
-make score
-```
-
-#### Clean Up Generated Directories
-
-```bash
-make clean
 ```

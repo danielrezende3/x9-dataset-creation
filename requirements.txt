@@ -1,13 +1,9 @@
 tqdm
 python_minifier
 python_obfuscator
+pyminifier3
 pandas
 scikit-learn
-pyminifier3
-kaggle
-ipykernel
-kagglehub
-ipywidgets
-beautifulsoup4
 sqlalchemy 
 pymysql
+dotenv

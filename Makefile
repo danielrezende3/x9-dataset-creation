@@ -1,20 +1,13 @@
-# ========================================================
-# Obfuscation Pipeline Makefile
-# ========================================================
-# Targets:
-#   all          - Run full pipeline (setup, obfuscate, check, score)
-#   setup        - Create directory structure
-#   obfuscate*   - Run specific obfuscation methods
-#   check*       - Verify execution consistency
-#   score        - Clean & rerun pipeline with scoring
-#   clean        - Remove generated artifacts
-# ========================================================
+# Makefile for Obfuscation and Execution Checks
 
-# -------------------------------
-# 1. Configuration
-# -------------------------------
-# Directory Structure
+# ================================
+# Variables
+# ================================
+
+# Parent directory
 DATASET_DIR := dataset
+
+# Subdirectories under the parent directory
 ORIGINAL_DIR := $(DATASET_DIR)/codeforces
 PYMINIFIER_DIR := $(DATASET_DIR)/codeforces_pyminifier
 PYTHON_MINIFIER_DIR := $(DATASET_DIR)/codeforces_python_minifier
@@ -22,101 +15,224 @@ PYTHON_OBFUSCATOR_DIR := $(DATASET_DIR)/codeforces_python_obfuscator
 INPUT_DIR := $(DATASET_DIR)/codeforces_input
 OUTPUT_DIR := $(DATASET_DIR)/codeforces_output
 
-# Script Paths
+# Define color codes for better readability
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+RED := \033[0;31m
+NC := \033[0m # No Color
+
+# Scripts
 OBFUSCATE_SCRIPT := scripts/obfuscate_files.py
 CHECK_SCRIPT := scripts/check_execution.py
 COMPUTE_SCORE_SCRIPT := scripts/compute_score.py
 
-# Terminal Colors
-GREEN := \033[0;32m
-YELLOW := \033[1;33m
-RED := \033[0;31m
-NC := \033[0m
+.PHONY: all score setup obfuscate obfuscate_pyminifier obfuscate_python_minifier \
+        obfuscate_python_obfuscator check_pyminifier check_python_minifier \
+        check_python_obfuscator check clean obfuscate_new obfuscate_pyminifier_new \
+        obfuscate_python_minifier_new obfuscate_python_obfuscator_new compute_score \
+        compute_score_pyminifier compute_score_python_minifier compute_score_python_obfuscator
 
-# -------------------------------
-# 2. Main Targets
-# -------------------------------
-.PHONY: all setup clean score
+# ================================
+# Main Commands
+# ================================
 
-all: setup obfuscate check score
-	@echo "$(GREEN)[√] Full pipeline completed$(NC)"
+## ---------------------------------------------------------------------------
+## make all
+##   1) Clean the necessary folders
+##   2) Create the folders
+##   3) Obfuscate the files
+##   4) Check files
+##   5) Clean the necessary folder
+##   6) Create the folders
+##   7) Obfuscate the files with the flags
+##   8) Run the score
+##   9) Clean the necessary folders
+## ---------------------------------------------------------------------------
+all:
+	@echo "$(YELLOW)[1] Cleaning folders...$(NC)"
+	$(MAKE) clean
+	@echo "$(YELLOW)[2] Creating folders...$(NC)"
+	$(MAKE) setup
+	@echo "$(YELLOW)[3] Obfuscating files...$(NC)"
+	$(MAKE) obfuscate
+	@echo "$(YELLOW)[4] Checking obfuscated files...$(NC)"
+	$(MAKE) check
+	@echo "$(YELLOW)[5] Cleaning folders...$(NC)"
+	$(MAKE) clean
+	@echo "$(YELLOW)[6] Creating folders...$(NC)"
+	$(MAKE) setup
+	@echo "$(YELLOW)[7] Obfuscating files with flags...$(NC)"
+	$(MAKE) obfuscate_new
+	@echo "$(YELLOW)[8] Running the score...$(NC)"
+	$(MAKE) compute_score
+	@echo "$(YELLOW)[9] Cleaning folders...$(NC)"
+	$(MAKE) clean
+	@echo "$(GREEN)All tasks completed successfully.$(NC)"
 
-score: clean setup obfuscate_new compute_score
-	@echo "$(GREEN)[√] Scoring pipeline completed$(NC)"
+## ---------------------------------------------------------------------------
+## make score
+##   5) Clean the necessary folder
+##   6) Create the folders
+##   7) Obfuscate the files with the flags
+##   8) Run the score
+##   9) Clean the necessary folders
+## ---------------------------------------------------------------------------
+score:
+	@echo "$(YELLOW)[5] Cleaning folders...$(NC)"
+	$(MAKE) clean
+	@echo "$(YELLOW)[6] Creating folders...$(NC)"
+	$(MAKE) setup
+	@echo "$(YELLOW)[7] Obfuscating files with flags...$(NC)"
+	$(MAKE) obfuscate_new
+	@echo "$(YELLOW)[8] Running the score...$(NC)"
+	$(MAKE) compute_score
+	@echo "$(YELLOW)[9] Cleaning folders...$(NC)"
+	$(MAKE) clean
+	@echo "$(GREEN)Score routine completed successfully.$(NC)"
 
-clean:
-	@echo "$(YELLOW)[!] Cleaning artifacts...$(NC)"
-	@rm -rf $(PYMINIFIER_DIR) $(PYTHON_MINIFIER_DIR) $(PYTHON_OBFUSCATOR_DIR)
-	@echo "$(GREEN)[√] Cleanup complete$(NC)"
+# ================================
+# Setup Target
+# ================================
 
 setup:
-	@echo "$(YELLOW)[!] Initializing directories...$(NC)"
-	@mkdir -p $(ORIGINAL_DIR) $(PYMINIFIER_DIR) $(PYTHON_MINIFIER_DIR) \
-	           $(PYTHON_OBFUSCATOR_DIR) $(INPUT_DIR) $(OUTPUT_DIR)
-	@echo "$(GREEN)[√] Directory structure ready$(NC)"
+	@echo "$(YELLOW)Setting up directories...$(NC)"
+	@mkdir -p $(ORIGINAL_DIR) \
+	           $(PYMINIFIER_DIR) \
+	           $(PYTHON_MINIFIER_DIR) \
+	           $(PYTHON_OBFUSCATOR_DIR) \
+	           $(INPUT_DIR) \
+	           $(OUTPUT_DIR)
+	@echo "$(GREEN)All directories are set up.$(NC)"
 
-# -------------------------------
-# 3. Obfuscation Targets
-# -------------------------------
-.PHONY: obfuscate obfuscate_new
+# ================================
+# Obfuscation Targets
+# ================================
 
 obfuscate: obfuscate_pyminifier obfuscate_python_minifier obfuscate_python_obfuscator
-	@echo "$(GREEN)[√] All obfuscations completed$(NC)"
+	@echo "$(GREEN)All obfuscation steps completed.$(NC)"
 
-obfuscate_new: obfuscate_pyminifier_new obfuscate_python_minifier_new obfuscate_python_obfuscator_new
-	@echo "$(GREEN)[√] New obfuscation cycle completed$(NC)"
-
-# Individual obfuscation methods
-define OBFUSCATE_TEMPLATE
-obfuscate_$(1):
-	@echo "$(YELLOW)[!] Running $(2) obfuscation...$(NC)"
-	@mkdir -p $(3)
+obfuscate_pyminifier:
+	@echo "$(YELLOW)Running pyminifier obfuscation...$(NC)"
 	python $(OBFUSCATE_SCRIPT) --original_folder $(ORIGINAL_DIR) \
-	                          --obfuscated_folder $(3) \
-	                          --method $(2) \
-	                          --include_original \
-	                          --include_suffix
-	@echo "$(GREEN)[√] $(2) obfuscation done$(NC)"
-endef
+	                          --obfuscated_folder $(PYMINIFIER_DIR) \
+	                          --method pyminifier
+	@echo "$(GREEN)pyminifier obfuscation done.$(NC)"
 
-$(eval $(call OBFUSCATE_TEMPLATE,pyminifier_new,pyminifier,$(PYMINIFIER_DIR)))
-$(eval $(call OBFUSCATE_TEMPLATE,python_minifier_new,python_minifier,$(PYTHON_MINIFIER_DIR)))
-$(eval $(call OBFUSCATE_TEMPLATE,python_obfuscator_new,python_obfuscator,$(PYTHON_OBFUSCATOR_DIR)))
+obfuscate_python_minifier:
+	@echo "$(YELLOW)Running python_minifier obfuscation...$(NC)"
+	python $(OBFUSCATE_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                          --obfuscated_folder $(PYTHON_MINIFIER_DIR) \
+	                          --method python_minifier
+	@echo "$(GREEN)python_minifier obfuscation done.$(NC)"
 
-# -------------------------------
-# 4. Verification Targets
-# -------------------------------
-.PHONY: check compute_score
+obfuscate_python_obfuscator:
+	@echo "$(YELLOW)Running python_obfuscator obfuscation...$(NC)"
+	python $(OBFUSCATE_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                          --obfuscated_folder $(PYTHON_OBFUSCATOR_DIR) \
+	                          --method python_obfuscator
+	@echo "$(GREEN)python_obfuscator obfuscation done.$(NC)"
+
+# ================================
+# Execution Check Targets
+# ================================
 
 check: check_pyminifier check_python_minifier check_python_obfuscator
-	@echo "$(GREEN)[√] All execution checks passed$(NC)"
+	@echo "$(GREEN)All execution checks completed.$(NC)"
+
+check_pyminifier:
+	@echo "$(YELLOW)Running execution check for pyminifier...$(NC)"
+	python $(CHECK_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                       --input_folder $(INPUT_DIR) \
+	                       --output_folder $(OUTPUT_DIR) \
+	                       --obfuscated_folder $(PYMINIFIER_DIR)
+	@echo "$(GREEN)Execution check for pyminifier done.$(NC)"
+
+check_python_minifier:
+	@echo "$(YELLOW)Running execution check for python_minifier...$(NC)"
+	python $(CHECK_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                       --input_folder $(INPUT_DIR) \
+	                       --output_folder $(OUTPUT_DIR) \
+	                       --obfuscated_folder $(PYTHON_MINIFIER_DIR)
+	@echo "$(GREEN)Execution check for python_minifier done.$(NC)"
+
+check_python_obfuscator:
+	@echo "$(YELLOW)Running execution check for python_obfuscator...$(NC)"
+	python $(CHECK_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                       --input_folder $(INPUT_DIR) \
+	                       --output_folder $(OUTPUT_DIR) \
+	                       --obfuscated_folder $(PYTHON_OBFUSCATOR_DIR)
+	@echo "$(GREEN)Execution check for python_obfuscator done.$(NC)"
+
+# ================================
+# Clean Target
+# ================================
+
+clean:
+	@echo "$(YELLOW)Cleaning up directories...$(NC)"
+	@rm -rf $(PYMINIFIER_DIR) \
+	        $(PYTHON_MINIFIER_DIR) \
+	        $(PYTHON_OBFUSCATOR_DIR) \
+	        dolos-* \
+	        results* \
+	        results/
+	@echo "$(GREEN)Cleanup completed.$(NC)"
+
+
+# ================================
+# Obfuscation with Additional Flags
+# ================================
+
+obfuscate_new: obfuscate_pyminifier_new obfuscate_python_minifier_new obfuscate_python_obfuscator_new
+	@echo "$(GREEN)All new obfuscation steps completed.$(NC)"
+
+obfuscate_pyminifier_new:
+	@echo "$(YELLOW)Running pyminifier obfuscation with additional flags...$(NC)"
+	@mkdir -p $(PYMINIFIER_DIR)
+	python $(OBFUSCATE_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                          --obfuscated_folder $(PYMINIFIER_DIR) \
+	                          --method pyminifier \
+	                          --include_original \
+	                          --include_suffix
+	@echo "$(GREEN)pyminifier obfuscation with additional flags done.$(NC)"
+
+obfuscate_python_minifier_new:
+	@echo "$(YELLOW)Running python_minifier obfuscation with additional flags...$(NC)"
+	@mkdir -p $(PYTHON_MINIFIER_DIR)
+	python $(OBFUSCATE_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                          --obfuscated_folder $(PYTHON_MINIFIER_DIR) \
+	                          --method python_minifier \
+	                          --include_original \
+	                          --include_suffix
+	@echo "$(GREEN)python_minifier obfuscation with additional flags done.$(NC)"
+
+obfuscate_python_obfuscator_new:
+	@echo "$(YELLOW)Running python_obfuscator obfuscation with additional flags...$(NC)"
+	@mkdir -p $(PYTHON_OBFUSCATOR_DIR)
+	python $(OBFUSCATE_SCRIPT) --original_folder $(ORIGINAL_DIR) \
+	                          --obfuscated_folder $(PYTHON_OBFUSCATOR_DIR) \
+	                          --method python_obfuscator \
+	                          --include_original \
+	                          --include_suffix
+	@echo "$(GREEN)python_obfuscator obfuscation with additional flags done.$(NC)"
+
+# ================================
+# Compute Score
+# ================================
 
 compute_score: compute_score_pyminifier compute_score_python_minifier compute_score_python_obfuscator
-	@echo "$(GREEN)[√] All scores computed$(NC)"
+	@echo "$(GREEN)All compute_score steps completed.$(NC)"
 
-# Execution check template
-define CHECK_TEMPLATE
-check_$(1):
-	@echo "$(YELLOW)[!] Verifying $(1)...$(NC)"
-	python $(CHECK_SCRIPT) --original_folder $(ORIGINAL_DIR) \
-	                      --input_folder $(INPUT_DIR) \
-	                      --output_folder $(OUTPUT_DIR) \
-	                      --obfuscated_folder $(2)
-	@echo "$(GREEN)[√] $(1) verification done$(NC)"
-endef
+compute_score_pyminifier:
+	@echo "$(YELLOW)Running compute_score for pyminifier...$(NC)"
+	python $(COMPUTE_SCORE_SCRIPT) $(PYMINIFIER_DIR)
+	@echo "$(GREEN)compute_score for pyminifier done.$(NC)"
 
-$(eval $(call CHECK_TEMPLATE,pyminifier,$(PYMINIFIER_DIR)))
-$(eval $(call CHECK_TEMPLATE,python_minifier,$(PYTHON_MINIFIER_DIR)))
-$(eval $(call CHECK_TEMPLATE,python_obfuscator,$(PYTHON_OBFUSCATOR_DIR)))
+compute_score_python_minifier:
+	@echo "$(YELLOW)Running compute_score for python_minifier...$(NC)"
+	python $(COMPUTE_SCORE_SCRIPT) $(PYTHON_MINIFIER_DIR)
+	@echo "$(GREEN)compute_score for python_minifier done.$(NC)"
 
-# Score computation template
-define SCORE_TEMPLATE
-compute_score_$(1):
-	@echo "$(YELLOW)[!] Calculating $(1) scores...$(NC)"
-	python $(COMPUTE_SCORE_SCRIPT) $(2)
-	@echo "$(GREEN)[√] $(1) scores ready$(NC)"
-endef
-
-$(eval $(call SCORE_TEMPLATE,pyminifier,$(PYMINIFIER_DIR)))
-$(eval $(call SCORE_TEMPLATE,python_minifier,$(PYTHON_MINIFIER_DIR)))
-$(eval $(call SCORE_TEMPLATE,python_obfuscator,$(PYTHON_OBFUSCATOR_DIR)))
+compute_score_python_obfuscator:
+	@echo "$(YELLOW)Running compute_score for python_obfuscator...$(NC)"
+	python $(COMPUTE_SCORE_SCRIPT) $(PYTHON_OBFUSCATOR_DIR)
+	@echo "$(GREEN)compute_score for python_obfuscator done.$(NC)"

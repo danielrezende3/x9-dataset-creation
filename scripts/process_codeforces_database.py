@@ -74,13 +74,16 @@ class FileHandler:
         input_data,
         expected_result,
         id,
-        base_path="./dataset/codeforces_input",
     ):
-        os.makedirs(base_path, exist_ok=True)
-        with open(f"{base_path}/problem_{problem_id}.in_{id}", "w") as f:
+        input_path = "./dataset/codeforces_input"
+        output_path = "./dataset/codeforces_output"
+        os.makedirs(input_path, exist_ok=True)
+        os.makedirs(output_path, exist_ok=True)
+
+        with open(f"{input_path}/problem_{problem_id}.in_{id}", "w") as f:
             f.write(DataProcessor.clean_str(input_data))
         with open(
-            f"{base_path.replace('_input', '_output')}/problem_{problem_id}.out_{id}",
+            f"{output_path}/problem_{problem_id}.out_{id}",
             "w",
         ) as f:
             f.write(DataProcessor.clean_str(expected_result))
