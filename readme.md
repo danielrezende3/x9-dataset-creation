@@ -32,6 +32,7 @@ Note: The results scores are in the format (dolos, jplag)
 
 Before hand, you need to have the following installed on your environment:
 
+- python3.8, this is because the code have some imports that are only available in this version
 - java runtime
 - unrar
 - wget
@@ -41,9 +42,10 @@ Before hand, you need to have the following installed on your environment:
 After that you need to setup the environmet variables in `.env` file
 
 ```bash
-MYSQL_USER=your_user
-MYSQL_PASSWORD=your_password
-MYSQL_HOST=your_host
+DB_USER=username
+DB_PASSWORD=username_password
+DB_HOST=database_host
+PYTHON38_PATH=python38_path
 ```
 
 ### Preparing venv

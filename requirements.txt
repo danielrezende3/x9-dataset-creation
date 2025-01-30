@@ -6,4 +6,4 @@ pandas
 scikit-learn
 sqlalchemy 
 pymysql
-dotenv
+python-dotenv

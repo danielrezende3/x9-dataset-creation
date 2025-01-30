@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
+from dotenv import load_dotenv
 from tqdm import tqdm
 from utils import (
     get_files_from_folder,
@@ -16,10 +17,11 @@ from utils import (
 )
 
 # Constants -------------------------------------------------------------------
+load_dotenv()
 TIMEOUT_SECONDS = 15
 CHUNK_SIZE = 3
 FILE_NAME = Path(__file__).stem
-PYTHON_EXECUTABLE = "/home/danielrezende/.pyenv/versions/3.8.20/bin/python"
+PYTHON_EXECUTABLE = os.getenv("PYTHON38_PATH")
 NUM_WORKERS = 4
 LOG_DIR = "logs"
 # Logging setup Constants -----------------------------------------------------
