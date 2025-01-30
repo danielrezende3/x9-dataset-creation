@@ -1,84 +1,71 @@
-# Hub of experiments
+# Experiment Hub for Code4Bench
 
-This repo contains the experiments done for the [code4bench](https://github.com/code4bench/Code4Bench) database
+This repository contains experiments evaluating code obfuscators using the [Code4Bench](https://github.com/code4bench/Code4Bench) database.
 
-## Preliminary results
+## Key Results (Preliminary)
 
-Note: The results scores are in the format (dolos, jplag)
+Evaluation metrics (Dolos, JPlag) for precision, recall, and F1-score:
 
-|obfuscator|precision |recall|f1-score|correct output|
-|---|---|---|---|---|
-|codeforces_pyminifier| 1.00, 1.00| 0.53, 0.81| 0.69, 0.89|35/300|
-|codeforces_python_minifier| 1.00, 1.00| 0.85, 0.88| 0.92, 0.94|295/300|
-|codeforces_python_obfuscator| 1.00, 1.00| 0.98, 0.99| 0.99, 0.99| 213/300|
+| Obfuscator                  | Precision | Recall    | F1-Score  | Correct Output |
+|-----------------------------|-----------|-----------|-----------|----------------|
+| codeforces_pyminifier       | 1.00, 1.00| 0.53, 0.81| 0.69, 0.89| 35/300         |
+| codeforces_python_minifier  | 1.00, 1.00| 0.85, 0.88| 0.92, 0.94| 295/300        |
+| codeforces_python_obfuscator| 1.00, 1.00| 0.98, 0.99| 0.99, 0.99| 213/300        |
 
-## How to setup the experiments
+## Setup Guide
 
-Before hand, you need to have the following installed on your environment:
+### Prerequisites
 
-- python3.8, this is because the code have some imports that are only available in this version
-- java runtime
-- unrar
-- wget
-- mysql
-- npm
+- Python 3.8 (required for specific imports)
+- Java Runtime
+- `unrar`, `wget`, `mysql`, `npm`
 
-After that you need to setup the environmet variables in `.env` file
+### Configuration
 
-```bash
-DB_USER=username
-DB_PASSWORD=username_password
-DB_HOST=database_host
-PYTHON38_PATH=python38_path
-```
+1. Create `.env` file:
 
-### Preparing venv
+   ```bash
+   DB_USER=username
+   DB_PASSWORD=username_password
+   DB_HOST=database_host
+   PYTHON38_PATH=python38_path
+   ```
 
-```bash
-python -m venv .venv 
-source .venv/bin/activate
-pip install -r requirements.txt
-export PYTHONPATH=$PWD
-```
+2. Initialize Python environment:
 
-### How to download dolos, at least version 2.9
+   ```bash
+   python -m venv .venv 
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   export PYTHONPATH=$PWD
+   ```
 
-Need to have npm installed on your environment
+3. Install tools:
 
-```bash
-npm install -g @dodona/dolos
-```
+   ```bash
+   # Dolos (v2.9+)
+   npm install -g @dodona/dolos
 
-### How to download jplag, at least version 5.1
+   # JPlag (v5.1+)
+   wget -O scripts/jplag-5.1.0.jar https://github.com/jplag/JPlag/releases/download/v5.1.0/jplag-5.1.0-jar-with-dependencies.jar
+   ```
 
-Need to have java installed on your environment
+4. Download and process dataset (~1 hour):
 
-```bash
-wget -O scripts/jplag-5.1.0.jar https://github.com/jplag/JPlag/releases/download/v5.1.0/jplag-5.1.0-jar-with-dependencies.jar
-```
+   ```bash
+   chmod +x import_sql.sh
+   ./import_sql.sh  # Requires unrar, wget, mysql
+   ```
 
-### Downloading and processing the dataset
+## Usage
 
-First you need to setup the environment before doing the script
-
-BEFORE: Check if `unrar`, `wget` and `mysql` are installed on your environment
-
-WARNING: The script will take some time to download and process the database (~1 hour)
-
-```bash
-chmod +x import_sql.sh
-./import_sql.sh
-```
-
-## Usage Instructions
-
-### Run the Entire Workflow
+Run the full workflow:
 
 ```bash
 make
 ```
 
-### Alternatively, run only the score computation
+Calculate scores only:
 
 ```bash
 make score
