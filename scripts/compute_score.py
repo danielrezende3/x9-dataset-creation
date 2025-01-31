@@ -18,7 +18,7 @@ def calculate_and_print_score(data: pd.DataFrame) -> tuple[float, float, float, 
     recall = recall_score(data["ground_truth"], data["prediction"], zero_division=0)
     f1 = f1_score(data["ground_truth"], data["prediction"], zero_division=0)
     acertos = data["prediction"].sum()
-    accuracy = acertos / 200
+    accuracy = acertos / 200 # ! HARDCODED, CHANGE TO BE THE COUNT OF FILES IN THE FOLDER
     return float(precision), float(recall), float(f1), float(accuracy)
 
 
