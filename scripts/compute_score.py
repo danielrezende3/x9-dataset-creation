@@ -11,13 +11,15 @@ from scripts.utils import log_error, validate_directories
 FILE_NAME = Path(__file__).stem
 
 
-def calculate_and_print_score(data: pd.DataFrame) -> tuple[float, float, float]:
+def calculate_and_print_score(data: pd.DataFrame) -> tuple[float, float, float, float]:
     precision = precision_score(
         data["ground_truth"], data["prediction"], zero_division=0
     )
     recall = recall_score(data["ground_truth"], data["prediction"], zero_division=0)
     f1 = f1_score(data["ground_truth"], data["prediction"], zero_division=0)
-    return float(precision), float(recall), float(f1)
+    acertos = data["prediction"].sum()
+    accuracy = acertos / 200
+    return float(precision), float(recall), float(f1), float(accuracy)
 
 
 def retrieve_model_variables(model_type: str) -> tuple[str, str, str]:
@@ -50,12 +52,13 @@ def read_csv_calc_print_score(csv_path: Path, model: str) -> None:
     print(f"--- {model} ---")
     data = pd.read_csv(csv_path)
     data = evaluate_similarity(data, model)
-    precision, recall, f1 = calculate_and_print_score(data)
+    precision, recall, f1, accuracy = calculate_and_print_score(data)
 
     print(f"Precision: {precision:.2f}")
     print(f"Recall: {recall:.2f}")
     print(f"f1-score: {f1:.2f}")
-    print(f"({precision:.2f}, {recall:.2f}, {f1:.2f})")
+    print(f"accuracy: {accuracy:.2f}")
+    print(f"({precision:.2f}, {recall:.2f}, {f1:.2f}, {accuracy:.2f})")
 
 
 def main(config: argparse.Namespace) -> None:
@@ -93,7 +96,7 @@ def main(config: argparse.Namespace) -> None:
                 "python3",
                 folder_path,
                 "--csv-export",
-                "--cluster-skip"
+                "--cluster-skip",
             ],
             timeout=10,
             capture_output=True,

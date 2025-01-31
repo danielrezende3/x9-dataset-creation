@@ -6,11 +6,11 @@ This repository contains experiments evaluating code obfuscators using the [Code
 
 Evaluation metrics (Dolos, JPlag) for precision, recall, and F1-score:
 
-| Obfuscator                  | Precision | Recall    | F1-Score  | Correct Output |
-|-----------------------------|-----------|-----------|-----------|----------------|
-| codeforces_pyminifier       | 1.00, 1.00| 0.53, 0.81| 0.69, 0.89| 35/300         |
-| codeforces_python_minifier  | 1.00, 1.00| 0.85, 0.88| 0.92, 0.94| 295/300        |
-| codeforces_python_obfuscator| 1.00, 1.00| 0.98, 0.99| 0.99, 0.99| 213/300        |
+| Obfuscator                   | Precision  | Recall     | F1-Score   | Accuracy   | Correct Output |
+| ---------------------------- | ---------- | ---------- | ---------- | ---------- | -------------- |
+| codeforces_pyminifier        | 1.00, 1.00 | 0.53, 0.81 | 0.69, 0.89 | 0.27, 0.32 | 35/300         |
+| codeforces_python_minifier   | 1.00, 1.00 | 0.85, 0.88 | 0.92, 0.94 | 0.42, 0.41 | 295/300        |
+| codeforces_python_obfuscator | 1.00, 1.00 | 0.98, 0.99 | 0.99, 0.99 | 0.49, 0.47 | 213/300        |
 
 ## Setup Guide
 
