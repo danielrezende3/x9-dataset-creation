@@ -25,3 +25,56 @@
 | GNU C      | 2  |93,492|
 | Python   | 8  |52,433|
 |GNU C 11 | 12|18,574|
+
+## stunnix
+
+Production mode with md5 mangler for all symbols. Comments are removed, whitespace is jammed, strings and integers are mangled too.
+
+## Picheta
+
+NOT WORKING!
+
+## Tigress options
+
+**1\. Basic Control Flow Flattening**
+
+This transformation restructures the control flow of a function to make it less predictable:
+
+```bash
+tigress --Transform=Flatten --Functions=* --out=Flatten.c input.c
+```
+
+**2\. Encoding Literals**
+
+To obscure constant values in the code, you can encode literals:
+
+```bash
+tigress --Transform=EncodeLiterals --Functions=* --out=EncodeLiterals.c input.c
+```
+
+**3\. Function Merging**
+
+Combine multiple functions into one to complicate analysis:
+
+```bash
+tigress --Transform=Merge --Functions=func1,func2 --out=Merge.c input.c
+```
+
+**4\. Virtualization**
+
+Transform a function into a virtual machine to significantly increase complexity:
+
+```bash
+tigress --Transform=Virtualize --Functions=target_function --out=Virtualize.c input.c
+```
+
+**5\. Composite Transformation**
+
+Apply a sequence of transformations for enhanced obfuscation:
+
+```bash
+tigress --Transform=EncodeLiterals --Functions=target_function \
+        --Transform=Flatten --Functions=target_function \
+        --Transform=Virtualize --Functions=target_function \
+        --out=output.c input.c
+```
