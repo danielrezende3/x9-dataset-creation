@@ -47,12 +47,8 @@ fi
 # Step 6: Check if the tables have been created
 mysql -u root -p"$DB_PASSWORD" -e "USE code4bench; SHOW TABLES;"
 
-# Step 7: Run the scripts/process_codeforces_database.py script
-echo "Running scripts/process_codeforces_database.py..."
-python scripts/process_codeforces_database.py
-
 if [ $? -ne 0 ]; then
-    echo "Error: process_codeforces_database.py failed. Halting execution."
+    echo "Error: Failed to create database."
     exit 1
 fi
 
@@ -61,4 +57,4 @@ echo "Cleaning up..."
 rm -f code4bench.rar
 rm -rf code4bench12-12-97
 
-echo "All SQL files have been imported successfully, and cleanup is complete."
+echo "All SQL files have been imported to database successfully, and cleanup is complete."
