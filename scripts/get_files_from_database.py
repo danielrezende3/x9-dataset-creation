@@ -8,6 +8,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
+from scripts.utils import log_error
+
 # Configure logging
 LOG_DIR = "./logs"
 FILE_NAME = Path(__file__).stem
@@ -44,10 +46,9 @@ class DatabaseConnector:
 
     def _validate_credentials(self):
         if not self.db_user or not self.db_password:
-            logger.error("Environment variables DB_USER or DB_PASSWORD are not set!")
-            raise ValueError(
-                "Environment variables DB_USER or DB_PASSWORD are not set!"
-            )
+            msg = "Environment variables DB_USER or DB_PASSWORD are not set!"
+            logger.error(msg)
+            log_error(FILE_NAME, msg)
 
     def _create_engine(self):
         return create_engine(
@@ -126,13 +127,14 @@ class FileHandler:
         os.makedirs(self.base_path, exist_ok=True)
         cleaned_code = DataProcessor.clean_str(source_code)
 
-        if self.language == "C":
+        if self.language == "C" or self.language == "GNU_C":
             file_extension = "c"
         elif self.language == "PYTHON":
             file_extension = "py"
         else:
-            logger.error("Invalid language. Choose between 'C' and 'PYTHON'.")
-            raise ValueError("Invalid language. Choose between 'C' and 'PYTHON'.")
+            msg = "Invalid language. Choose between 'C', 'GNU_C' and 'PYTHON'."
+            logger.error(msg)
+            log_error(FILE_NAME, msg)
 
         file_path = os.path.join(
             self.base_path, f"problem_{problem_id}.{file_extension}"
@@ -182,8 +184,14 @@ def process_problems(folder_path: str, language: str, save: bool) -> list[int]:
     LIMIT 100;
     """)
 
+    language_key = language.upper()
+    if language_key not in Lang_to_ID:
+        msg = "Invalid language. Choose between 'C', 'GNU_C' and 'PYTHON'."
+        logger.error(msg)
+        log_error(FILE_NAME, msg)
+
     problem_rows = db_connector.execute_query(
-        problem_query, {"language_ID": Lang_to_ID[language.upper()]}
+        problem_query, {"language_ID": Lang_to_ID[language_key]}
     )
     problems = [data_processor.define_problem(row) for row in problem_rows]
     problem_ids = [problem["problems_id"] for problem in problems]
