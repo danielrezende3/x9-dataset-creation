@@ -17,3 +17,11 @@
 - `obfuscate_files.py`: obfuscates the files in the dataset
 - `process_codeforces_database.py`: process the database and creates the dataset
 - `utils.py`: contains the utility functions used in the experiments
+
+## Language ID's
+
+| Language | ID | Submission count|
+|----------|----|-|
+| GNU C      | 2  |93,492|
+| Python   | 8  |52,433|
+|GNU C 11 | 12|18,574|
