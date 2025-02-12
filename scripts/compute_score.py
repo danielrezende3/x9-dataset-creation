@@ -11,7 +11,7 @@ from scripts.utils import log_error, validate_directories
 FILE_NAME = Path(__file__).stem
 
 
-def calculate_and_print_score(data: pd.DataFrame) -> tuple[float, float, float]:
+def compute_score_metrics(data: pd.DataFrame) -> tuple[float, float, float]:
     precision = precision_score(
         data["ground_truth"], data["prediction"], zero_division=0
     )
@@ -50,7 +50,7 @@ def read_csv_calc_print_score(csv_path: Path, model: str) -> None:
     print(f"--- {model} ---")
     data = pd.read_csv(csv_path)
     data = evaluate_similarity(data, model)
-    precision, recall, f1 = calculate_and_print_score(data)
+    precision, recall, f1 = compute_score_metrics(data)
 
     print(f"Precision: {precision:.2f}")
     print(f"Recall: {recall:.2f}")
