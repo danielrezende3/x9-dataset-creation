@@ -11,15 +11,13 @@ from scripts.utils import log_error, validate_directories
 FILE_NAME = Path(__file__).stem
 
 
-def calculate_and_print_score(data: pd.DataFrame) -> tuple[float, float, float, float]:
+def calculate_and_print_score(data: pd.DataFrame) -> tuple[float, float, float]:
     precision = precision_score(
         data["ground_truth"], data["prediction"], zero_division=0
     )
     recall = recall_score(data["ground_truth"], data["prediction"], zero_division=0)
     f1 = f1_score(data["ground_truth"], data["prediction"], zero_division=0)
-    acertos = data["prediction"].sum()
-    accuracy = acertos / 200 # ! HARDCODED, CHANGE TO BE THE COUNT OF FILES IN THE FOLDER
-    return float(precision), float(recall), float(f1), float(accuracy)
+    return float(precision), float(recall), float(f1)
 
 
 def retrieve_model_variables(model_type: str) -> tuple[str, str, str]:
@@ -39,7 +37,7 @@ def evaluate_similarity(data: pd.DataFrame, model_type: str) -> pd.DataFrame:
 
         data["ground_truth"] = data["problem1"] == data["problem2"]
         threshold = 0.8
-        data["prediction"] = data[similarity] > threshold
+        data["prediction"] = data[similarity] >= threshold
         return data
     except KeyError:
         log_error(
@@ -52,60 +50,76 @@ def read_csv_calc_print_score(csv_path: Path, model: str) -> None:
     print(f"--- {model} ---")
     data = pd.read_csv(csv_path)
     data = evaluate_similarity(data, model)
-    precision, recall, f1, accuracy = calculate_and_print_score(data)
+    precision, recall, f1 = calculate_and_print_score(data)
 
     print(f"Precision: {precision:.2f}")
     print(f"Recall: {recall:.2f}")
     print(f"f1-score: {f1:.2f}")
-    print(f"accuracy: {accuracy:.2f}")
-    print(f"({precision:.2f}, {recall:.2f}, {f1:.2f}, {accuracy:.2f})")
+    print(f"({precision:.2f}, {recall:.2f}, {f1:.2f})")
 
 
 def main(config: argparse.Namespace) -> None:
-    # Run dolos
     folder_path = Path(config.folder_path)
 
-    files = glob(f"./{folder_path}/*.py")
-    stdout = (
-        subprocess.run(
-            [
-                "dolos",
-                "--output-format",
-                "csv",
-                "--language",
-                "python",
-                *files,
-            ],
-            capture_output=True,
-            text=True,
+    files_py = glob(f"./{folder_path}/*.py")
+    files_c = glob(f"./{folder_path}/*.c")
+    # Ensure that the folder contains only one file type.
+    if files_py and files_c:
+        log_error(
+            FILE_NAME,
+            "Folder must contain only one type of files: either Python or C files, not both.",
         )
-        .stdout.split("\n")[0]
-        .split(":")[1]
-        .strip()
+    elif files_py:
+        dolos_language = "python"
+        files = files_py
+        jplag_language = "python3"
+    elif files_c:
+        dolos_language = "C"
+        files = files_c
+        jplag_language = "c"
+    else:
+        log_error(FILE_NAME, "No valid Python or C files found in the folder.")
+
+    # Execute dolos on the selected files.
+    dolos_result = subprocess.run(
+        [
+            "dolos",
+            "--output-format",
+            "csv",
+            "--language",
+            dolos_language,
+            *files,
+        ],
+        capture_output=True,
+        text=True,
     )
-    read_csv_calc_print_score(Path(f"./{stdout}/pairs.csv"), "dolos")
+
+    # Extract the output directory from dolos's stdout.
+    try:
+        first_line = dolos_result.stdout.splitlines()[0]
+        output_dir = first_line.split(":")[1].strip()
+    except (IndexError, ValueError):
+        log_error(FILE_NAME, "Unexpected output format from dolos.")
+
+    read_csv_calc_print_score(Path(f"./{output_dir}/pairs.csv"), "dolos")
 
     # Run jplag
-    stdout = (
-        subprocess.run(
-            [
-                "java",
-                "-jar",
-                "scripts/jplag-5.1.0.jar",
-                "-l",
-                "python3",
-                folder_path,
-                "--csv-export",
-                "--cluster-skip",
-            ],
-            timeout=10,
-            capture_output=True,
-            text=True,
-        )
-        .stdout.split("\n")[0]
-        .split(":")[1]
-        .strip()
+    subprocess.run(
+        [
+            "java",
+            "-jar",
+            "scripts/jplag-5.1.0.jar",
+            "-l",
+            jplag_language,
+            str(folder_path),
+            "--csv-export",
+            "--cluster-skip",
+        ],
+        timeout=10,
+        capture_output=True,
+        text=True,
     )
+
     read_csv_calc_print_score(Path("./results/results.csv"), "jplag")
 
 
